@@ -27,6 +27,12 @@ case "$brand" in
 esac
 
 render_active_config_for_colors "$verixa_color" "$lgpay_color" "$sandbox_color"
+actual_color=$(active_color_for_brand "$brand")
+if [[ "$actual_color" != "$new_color" ]]; then
+  echo "Failed to update active color for $service in $DYNAMIC_ACTIVE (expected $new_color, got $actual_color)" >&2
+  exit 1
+fi
 
 echo "Active color for $service is now $new_color"
 echo "Active colors: verixa=$verixa_color lgpay=$lgpay_color sandbox=$sandbox_color"
+echo "Active config: $DYNAMIC_ACTIVE"
