@@ -8,7 +8,7 @@ source "$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)/lib.sh"
 target=${1:-active}
 case "$target" in
   blue|green)
-    container_ready "$target" "${READY_ATTEMPTS:-1}"
+    all_brands_ready "$target" "${READY_ATTEMPTS:-1}"
     ;;
   active)
     "$ROOT_DIR/scripts/verify-active.sh"

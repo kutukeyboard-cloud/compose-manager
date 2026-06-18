@@ -13,8 +13,18 @@ if [[ -f "$ENV_FILE" ]]; then
   set +a
 fi
 
-APP_PORT=${APP_PORT:-8080}
+# ── Brand registry ──────────────────────────────────────────────────────────
+# All managed brands. Phase 1 = atomic color switch (all brands switch together).
+BRANDS=(verixa lgpay)
+
+# Per-brand port mapping
+VERIXA_PORT=${VERIXA_PORT:-8900}
+LGPAY_PORT=${LGPAY_PORT:-8902}
+
+# Per-brand host mapping
 SERVICE_WEBHOOK_HOST=${SERVICE_WEBHOOK_HOST:-webhook.example.test}
+LGPAY_WEBHOOK_HOST=${LGPAY_WEBHOOK_HOST:-lgpay-webhook.example.test}
+
 COMPOSE_MODE=${COMPOSE_MODE:-registry}
 
 compose_files=("-f" "$ROOT_DIR/docker-compose.yml")
@@ -45,6 +55,30 @@ other_color() {
   fi
 }
 
+# Return the internal port for a brand
+brand_port() {
+  local brand=$1
+  case "$brand" in
+    verixa) echo "$VERIXA_PORT" ;;
+    lgpay)  echo "$LGPAY_PORT" ;;
+    *)      echo "Unknown brand: $brand" >&2; exit 2 ;;
+  esac
+}
+
+# Return the compose service name for a brand+color
+brand_service() {
+  local brand=$1 color=$2
+  echo "api-${brand}-${color}"
+}
+
+# Return all compose service names for a given color (all brands)
+color_services() {
+  local color=$1
+  for brand in "${BRANDS[@]}"; do
+    echo "api-${brand}-${color}"
+  done
+}
+
 write_scheduler_flag() {
   local color=$1 enabled=$2
   require_color "$color"
@@ -59,22 +93,35 @@ render_active_config() {
   tmp=$(mktemp "$ROOT_DIR/traefik/dynamic/.active.yml.XXXXXX")
   sed \
     -e "s/__ACTIVE_COLOR__/$color/g" \
-    -e "s/__APP_PORT__/$APP_PORT/g" \
+    -e "s/__VERIXA_PORT__/$VERIXA_PORT/g" \
+    -e "s/__LGPAY_PORT__/$LGPAY_PORT/g" \
     -e "s/__SERVICE_WEBHOOK_HOST__/$SERVICE_WEBHOOK_HOST/g" \
+    -e "s/__LGPAY_WEBHOOK_HOST__/$LGPAY_WEBHOOK_HOST/g" \
     "$DYNAMIC_TEMPLATE" > "$tmp"
   mv "$tmp" "$DYNAMIC_ACTIVE"
 }
 
+# Wait for a single brand+color container to pass /readyz
 container_ready() {
-  local color=$1 attempts=${2:-30}
-  require_color "$color"
+  local brand=$1 color=$2 attempts=${3:-30}
+  local svc port
+  svc=$(brand_service "$brand" "$color")
+  port=$(brand_port "$brand")
   for ((i = 1; i <= attempts; i++)); do
-    if compose exec -T "service-webhook-$color" wget -qO- "http://127.0.0.1:$APP_PORT/readyz" >/dev/null 2>&1; then
-      echo "service-webhook-$color ready"
+    if compose exec -T "$svc" wget -qO- "http://127.0.0.1:$port/readyz" >/dev/null 2>&1; then
+      echo "$svc ready"
       return 0
     fi
     sleep 2
   done
-  echo "service-webhook-$color did not become ready after $attempts attempts" >&2
+  echo "$svc did not become ready after $attempts attempts" >&2
   return 1
+}
+
+# Wait for ALL brand containers of a given color to pass /readyz
+all_brands_ready() {
+  local color=$1 attempts=${2:-30}
+  for brand in "${BRANDS[@]}"; do
+    container_ready "$brand" "$color" "$attempts"
+  done
 }

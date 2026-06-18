@@ -1,13 +1,26 @@
 http:
   routers:
-    service-webhook:
+    api-verixa:
       rule: "Host(`__SERVICE_WEBHOOK_HOST__`)"
       entryPoints:
         - web
-      service: service-webhook-__ACTIVE_COLOR__
+      service: api-verixa-weighted
+
+    api-lgpay:
+      rule: "Host(`__LGPAY_WEBHOOK_HOST__`)"
+      entryPoints:
+        - web
+      service: api-lgpay-weighted
 
   services:
-    service-webhook-blue:
+    # ── Verixa weighted (active color) ──────────────────────────────────────
+    api-verixa-weighted:
+      weighted:
+        services:
+          - name: api-verixa-__ACTIVE_COLOR__
+            weight: 100
+
+    api-verixa-blue:
       loadBalancer:
         passHostHeader: true
         healthCheck:
@@ -15,8 +28,9 @@ http:
           interval: 10s
           timeout: 3s
         servers:
-          - url: "http://service-webhook-blue:__APP_PORT__"
-    service-webhook-green:
+          - url: "http://api-verixa-blue:__VERIXA_PORT__"
+
+    api-verixa-green:
       loadBalancer:
         passHostHeader: true
         healthCheck:
@@ -24,4 +38,31 @@ http:
           interval: 10s
           timeout: 3s
         servers:
-          - url: "http://service-webhook-green:__APP_PORT__"
+          - url: "http://api-verixa-green:__VERIXA_PORT__"
+
+    # ── Lgpay weighted (active color) ───────────────────────────────────────
+    api-lgpay-weighted:
+      weighted:
+        services:
+          - name: api-lgpay-__ACTIVE_COLOR__
+            weight: 100
+
+    api-lgpay-blue:
+      loadBalancer:
+        passHostHeader: true
+        healthCheck:
+          path: /readyz
+          interval: 10s
+          timeout: 3s
+        servers:
+          - url: "http://api-lgpay-blue:__LGPAY_PORT__"
+
+    api-lgpay-green:
+      loadBalancer:
+        passHostHeader: true
+        healthCheck:
+          path: /readyz
+          interval: 10s
+          timeout: 3s
+        servers:
+          - url: "http://api-lgpay-green:__LGPAY_PORT__"

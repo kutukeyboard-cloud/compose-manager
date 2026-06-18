@@ -1,50 +1,101 @@
 name: ${COMPOSE_PROJECT_NAME:-service-webhook-bg}
 
-x-service-webhook-common: &service-webhook-common
+# ── Shared anchors ──────────────────────────────────────────────────────────
+
+x-api-common: &api-common
   restart: unless-stopped
-  expose:
-    - "${APP_PORT:-8080}"
-  environment: &service-webhook-env
-    APP_ENV: ${APP_ENV:-production}
-    APP_NAME: ${APP_NAME:-Verixa}
-    APP_PORT: ${APP_PORT:-8080}
-    DB_HOST: ${DB_HOST:-mysql}
-    DB_PORT: ${DB_PORT:-3306}
-    DB_USER: ${DB_USER:-root}
-    DB_PASS: ${DB_PASS:-}
-    DB_NAME: ${DB_NAME:-service_webhook}
-    DB_CHARSET: ${DB_CHARSET:-utf8mb4}
-    REDIS_ADDR: ${REDIS_ADDR:-redis:6379}
-    REDIS_PASSWORD: ${REDIS_PASSWORD:-}
-    REDIS_DB: ${REDIS_DB:-0}
-    LOG_LEVEL: ${LOG_LEVEL:-1}
-    REQUEST_TIMEOUT_SECONDS: ${REQUEST_TIMEOUT_SECONDS:-15}
-    INTERNAL_TRANSFER_BASE_URL: ${INTERNAL_TRANSFER_BASE_URL:-http://verixa-org-web:8000}
-    INTERNAL_TRANSFER_PATH: ${INTERNAL_TRANSFER_PATH:-/api/v1/internal-transfer}
-    SETTLEMENT_T0_INTERVAL: ${SETTLEMENT_T0_INTERVAL:-10m}
-    SETTLEMENT_T1_CRON_TIME: ${SETTLEMENT_T1_CRON_TIME:-16:00}
-    SETTLEMENT_CUTOFF_TIME: ${SETTLEMENT_CUTOFF_TIME:-23:30}
-    SETTLEMENT_LOCK_TTL_SECONDS: ${SETTLEMENT_LOCK_TTL_SECONDS:-300}
-    SETTLEMENT_MAX_RETRIES: ${SETTLEMENT_MAX_RETRIES:-3}
-    SETTLEMENT_PER_CHANNEL_ENABLED: ${SETTLEMENT_PER_CHANNEL_ENABLED:-true}
-    TIMEZONE: ${TIMEZONE:-Asia/Shanghai}
-    CRON_TZ: ${CRON_TZ:-Asia/Shanghai}
-    PAYOUT_DEBUG_FULL_LOG: ${PAYOUT_DEBUG_FULL_LOG:-true}
-    CACHE_INVALIDATION_ENABLED: ${CACHE_INVALIDATION_ENABLED:-true}
+  depends_on:
+    redis:
+      condition: service_healthy
   networks:
     - traefik_internal
     - shared
-  labels:
-    promtail.labels.service_type: go
-    promtail.labels.service_name: service-webhook
+  deploy:
+    resources:
+      limits:
+        memory: 512M
+      reservations:
+        memory: 100M
+
+x-api-verixa-common: &api-verixa-common
+  <<: *api-common
+  expose:
+    - "${VERIXA_PORT:-8900}"
   healthcheck:
-    test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:${APP_PORT:-8080}/readyz >/dev/null 2>&1"]
+    test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:${VERIXA_PORT:-8900}/readyz >/dev/null 2>&1"]
     interval: 10s
     timeout: 3s
     retries: 6
     start_period: 20s
+  environment: &api-verixa-env
+    APP_ENV: ${APP_ENV:-production}
+    APP_NAME: Verixa
+    APP_PORT: ${VERIXA_PORT:-8900}
+    SCHEDULER_ENABLED: "false"
+    DB_HOST: ${DB_HOST:-mysql}
+    DB_PORT: ${DB_PORT:-3306}
+    DB_USER: ${DB_USER:-root}
+    DB_PASS: ${DB_PASS:-}
+    DB_NAME: ${VERIXA_DB_NAME:-verixa_prod}
+    DB_CHARSET: ${DB_CHARSET:-utf8mb4}
+    REDIS_ADDR: ${REDIS_ADDR:-redis:6379}
+    REDIS_PASSWORD: ${REDIS_PASSWORD:-}
+    REDIS_DB: ${REDIS_DB:-0}
+    LOG_LEVEL: ${LOG_LEVEL:-0}
+    REQUEST_TIMEOUT_SECONDS: ${REQUEST_TIMEOUT_SECONDS:-15}
+    INTERNAL_TRANSFER_BASE_URL: ${VERIXA_INTERNAL_TRANSFER_BASE_URL:-http://verixa-org-web:8000}
+    INTERNAL_TRANSFER_PATH: ${INTERNAL_TRANSFER_PATH:-/api/v1/internal-transfer}
+  labels:
+    promtail.labels.service_type: go
+    promtail.labels.service_name: webhook
+
+x-api-lgpay-common: &api-lgpay-common
+  <<: *api-common
+  expose:
+    - "${LGPAY_PORT:-8902}"
+  healthcheck:
+    test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:${LGPAY_PORT:-8902}/readyz >/dev/null 2>&1"]
+    interval: 10s
+    timeout: 3s
+    retries: 6
+    start_period: 20s
+  environment: &api-lgpay-env
+    APP_ENV: ${APP_ENV:-production}
+    APP_NAME: Lgpay
+    APP_PORT: ${LGPAY_PORT:-8902}
+    SCHEDULER_ENABLED: "false"
+    DB_HOST: ${DB_HOST:-mysql}
+    DB_PORT: ${DB_PORT:-3306}
+    DB_USER: ${DB_USER:-root}
+    DB_PASS: ${DB_PASS:-}
+    DB_NAME: ${LGPAY_DB_NAME:-lgpay_prod}
+    DB_CHARSET: ${DB_CHARSET:-utf8mb4}
+    REDIS_ADDR: ${REDIS_ADDR:-redis:6379}
+    REDIS_PASSWORD: ${REDIS_PASSWORD:-}
+    REDIS_DB: ${REDIS_DB:-0}
+    LOG_LEVEL: ${LOG_LEVEL:-0}
+    REQUEST_TIMEOUT_SECONDS: ${REQUEST_TIMEOUT_SECONDS:-15}
+    INTERNAL_TRANSFER_BASE_URL: ${LGPAY_INTERNAL_TRANSFER_BASE_URL:-http://lgpay-web:8000}
+    INTERNAL_TRANSFER_PATH: ${INTERNAL_TRANSFER_PATH:-/api/v1/internal-transfer}
+  labels:
+    promtail.labels.service_type: go
+    promtail.labels.service_name: webhook
+
+# ── Services ────────────────────────────────────────────────────────────────
 
 services:
+  redis:
+    image: redis:7-alpine
+    container_name: ${COMPOSE_PROJECT_NAME:-service-webhook-bg}-redis
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    networks:
+      - traefik_internal
+
   traefik:
     image: traefik:v3.1
     container_name: ${COMPOSE_PROJECT_NAME:-service-webhook-bg}-traefik
@@ -61,28 +112,60 @@ services:
       - traefik_internal
       - shared
     depends_on:
-      - service-webhook-blue
-      - service-webhook-green
+      - api-verixa-blue
+      - api-verixa-green
+      - api-lgpay-blue
+      - api-lgpay-green
 
-  service-webhook-blue:
-    <<: *service-webhook-common
-    container_name: ${COMPOSE_PROJECT_NAME:-service-webhook-bg}-service-webhook-blue
+  # ── Verixa blue/green ─────────────────────────────────────────────────────
+
+  api-verixa-blue:
+    <<: *api-verixa-common
+    container_name: ${COMPOSE_PROJECT_NAME:-service-webhook-bg}-api-verixa-blue
     image: ${SERVICE_WEBHOOK_IMAGE:-service-webhook}:${SERVICE_WEBHOOK_VERSION:-latest}
     env_file:
       - ./env/blue.env
     environment:
-      <<: *service-webhook-env
+      <<: *api-verixa-env
       DEPLOY_COLOR: blue
+      INTERNAL_TRANSFER_BASE_URL: ${VERIXA_BLUE_INTERNAL_TRANSFER_BASE_URL:-http://verixa-org-web-blue:8000}
 
-  service-webhook-green:
-    <<: *service-webhook-common
-    container_name: ${COMPOSE_PROJECT_NAME:-service-webhook-bg}-service-webhook-green
+  api-verixa-green:
+    <<: *api-verixa-common
+    container_name: ${COMPOSE_PROJECT_NAME:-service-webhook-bg}-api-verixa-green
     image: ${SERVICE_WEBHOOK_IMAGE:-service-webhook}:${SERVICE_WEBHOOK_VERSION:-latest}
     env_file:
       - ./env/green.env
     environment:
-      <<: *service-webhook-env
+      <<: *api-verixa-env
       DEPLOY_COLOR: green
+      INTERNAL_TRANSFER_BASE_URL: ${VERIXA_GREEN_INTERNAL_TRANSFER_BASE_URL:-http://verixa-org-web:8000}
+
+  # ── Lgpay blue/green ──────────────────────────────────────────────────────
+
+  api-lgpay-blue:
+    <<: *api-lgpay-common
+    container_name: ${COMPOSE_PROJECT_NAME:-service-webhook-bg}-api-lgpay-blue
+    image: ${SERVICE_WEBHOOK_IMAGE:-service-webhook}:${SERVICE_WEBHOOK_VERSION:-latest}
+    env_file:
+      - ./env/blue.env
+    environment:
+      <<: *api-lgpay-env
+      DEPLOY_COLOR: blue
+      INTERNAL_TRANSFER_BASE_URL: ${LGPAY_BLUE_INTERNAL_TRANSFER_BASE_URL:-http://lgpay-web-blue:8000}
+
+  api-lgpay-green:
+    <<: *api-lgpay-common
+    container_name: ${COMPOSE_PROJECT_NAME:-service-webhook-bg}-api-lgpay-green
+    image: ${SERVICE_WEBHOOK_IMAGE:-service-webhook}:${SERVICE_WEBHOOK_VERSION:-latest}
+    env_file:
+      - ./env/green.env
+    environment:
+      <<: *api-lgpay-env
+      DEPLOY_COLOR: green
+      INTERNAL_TRANSFER_BASE_URL: ${LGPAY_GREEN_INTERNAL_TRANSFER_BASE_URL:-http://lgpay-web:8000}
+
+# ── Networks ────────────────────────────────────────────────────────────────
 
 networks:
   traefik_internal:
