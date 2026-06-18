@@ -27,7 +27,6 @@ case "$brand" in
 esac
 
 render_active_config_for_colors "$verixa_color" "$lgpay_color" "$sandbox_color"
-compose up -d --no-deps traefik
 
 echo "Active color for $service is now $new_color"
 echo "Active colors: verixa=$verixa_color lgpay=$lgpay_color sandbox=$sandbox_color"
