@@ -4,9 +4,8 @@ name: ${COMPOSE_PROJECT_NAME:-service-webhook-bg}
 
 x-api-common: &api-common
   restart: unless-stopped
-  depends_on:
-    redis:
-      condition: service_healthy
+  # Redis and MySQL are external on the shared network.
+  # No depends_on needed — containers will retry connections.
   networks:
     - traefik_internal
     - shared
@@ -31,14 +30,13 @@ x-api-verixa-common: &api-verixa-common
     APP_ENV: ${APP_ENV:-production}
     APP_NAME: Verixa
     APP_PORT: ${VERIXA_PORT:-8900}
-    SCHEDULER_ENABLED: "false"
     DB_HOST: ${DB_HOST:-mysql}
     DB_PORT: ${DB_PORT:-3306}
     DB_USER: ${DB_USER:-root}
     DB_PASS: ${DB_PASS:-}
     DB_NAME: ${VERIXA_DB_NAME:-verixa_prod}
     DB_CHARSET: ${DB_CHARSET:-utf8mb4}
-    REDIS_ADDR: ${REDIS_ADDR:-redis:6379}
+    REDIS_ADDR: ${REDIS_ADDR:-service-webhook-redis:6379}
     REDIS_PASSWORD: ${REDIS_PASSWORD:-}
     REDIS_DB: ${REDIS_DB:-0}
     LOG_LEVEL: ${LOG_LEVEL:-0}
@@ -63,14 +61,13 @@ x-api-lgpay-common: &api-lgpay-common
     APP_ENV: ${APP_ENV:-production}
     APP_NAME: Lgpay
     APP_PORT: ${LGPAY_PORT:-8902}
-    SCHEDULER_ENABLED: "false"
     DB_HOST: ${DB_HOST:-mysql}
     DB_PORT: ${DB_PORT:-3306}
     DB_USER: ${DB_USER:-root}
     DB_PASS: ${DB_PASS:-}
     DB_NAME: ${LGPAY_DB_NAME:-lgpay_prod}
     DB_CHARSET: ${DB_CHARSET:-utf8mb4}
-    REDIS_ADDR: ${REDIS_ADDR:-redis:6379}
+    REDIS_ADDR: ${REDIS_ADDR:-service-webhook-redis:6379}
     REDIS_PASSWORD: ${REDIS_PASSWORD:-}
     REDIS_DB: ${REDIS_DB:-0}
     LOG_LEVEL: ${LOG_LEVEL:-0}
@@ -84,18 +81,6 @@ x-api-lgpay-common: &api-lgpay-common
 # ── Services ────────────────────────────────────────────────────────────────
 
 services:
-  redis:
-    image: redis:7-alpine
-    container_name: ${COMPOSE_PROJECT_NAME:-service-webhook-bg}-redis
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 3s
-      retries: 5
-    networks:
-      - traefik_internal
-
   traefik:
     image: traefik:v3.1
     container_name: ${COMPOSE_PROJECT_NAME:-service-webhook-bg}-traefik

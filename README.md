@@ -16,9 +16,9 @@ Operator-focused Docker Compose manager for running multi-brand `service-webhook
 - **Cron containers** are NOT managed here — they stay in the service-webhook repo. Compose-manager only manages API services behind Traefik.
 - App containers use `expose` (not `ports`); Traefik handles external routing.
 
-### Redis
+### External dependencies
 
-A local `redis:7-alpine` service with healthcheck is included. MySQL is external on the shared network.
+Redis and MySQL are external services on the shared Docker network. Compose-manager does not include its own Redis or MySQL — it relies on the `service-webhook-redis` and MySQL containers from the service-webhook infra compose. Ensure the infra layer is running before starting compose-manager.
 
 ## Files
 
@@ -139,7 +139,7 @@ docker compose --env-file .env.example -f docker-compose.yml -f compose.registry
 | `LGPAY_BLUE_INTERNAL_TRANSFER_BASE_URL`  | `http://lgpay-web-blue:8000`      | Internal transfer URL for Lgpay blue       |
 | `DB_HOST`                           | `mysql`                          | Shared database host                           |
 | `DB_PORT`                           | `3306`                           | Shared database port                           |
-| `REDIS_ADDR`                        | `redis:6379`                     | Redis address                                  |
+| `REDIS_ADDR`                        | `service-webhook-redis:6379`     | Redis address (external on shared network)     |
 | `SERVICE_WEBHOOK_PATH`              | `../verixa-code/service-webhook` | Source path for build mode                     |
 | `SERVICE_WEBHOOK_IMAGE`             | —                                | Registry image for registry mode               |
 | `SERVICE_WEBHOOK_VERSION`           | `latest`                         | Image tag/version                              |

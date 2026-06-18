@@ -1,4 +1,6 @@
 .env
 traefik/dynamic/active.yml
+.deploy.lock
+.active-slot
 *.log
 .DS_Store
