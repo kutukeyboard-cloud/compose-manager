@@ -59,7 +59,7 @@ Redis, MySQL, Laravel, and other app dependencies are external services on the s
 
    Or set `SHARED_NETWORK_NAME` in `.env` to an existing Docker network.
 4. Ensure `service-webhook` has unauthenticated `GET /readyz`; scripts use it for promotion checks.
-5. Ensure the configured public ports are available on the VPS. Defaults are `8900` for Verixa, `8902` for Lgpay, and `8080` for the Traefik dashboard.
+5. Ensure the configured public ports are available on the VPS. Defaults are `8900` for Verixa, `8902` for Lgpay, and `8999` for the Traefik dashboard.
 
 ## Workflows
 
@@ -159,7 +159,7 @@ docker compose --env-file .env.example -f docker-compose.yml -f compose.registry
 | `COMPOSE_PROJECT_NAME`              | `service-webhook-bg`             | Docker Compose project name                    |
 | `VERIXA_TRAEFIK_PORT`               | `8900`                           | Verixa public Traefik port                     |
 | `LGPAY_TRAEFIK_PORT`                | `8902`                           | Lgpay public Traefik port                      |
-| `TRAEFIK_DASHBOARD_PORT`            | `8080`                           | Traefik dashboard port                         |
+| `TRAEFIK_DASHBOARD_PORT`            | `8999`                           | Traefik dashboard port                         |
 | `VERIXA_PORT`                       | `8900`                           | Internal port for Verixa API services          |
 | `LGPAY_PORT`                        | `8902`                           | Internal port for Lgpay API services           |
 | `VERIXA_APP_ENV_FILE`               | `/dev/null`                      | External service-webhook env file for Verixa   |

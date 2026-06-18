@@ -66,7 +66,7 @@ services:
     ports:
       - "${VERIXA_TRAEFIK_PORT:-8900}:8900"
       - "${LGPAY_TRAEFIK_PORT:-8902}:8902"
-      - "${TRAEFIK_DASHBOARD_PORT:-8080}:8080"
+      - "${TRAEFIK_DASHBOARD_PORT:-8999}:8080"
     volumes:
       - ./traefik/traefik.yml:/etc/traefik/traefik.yml:ro
       - ./traefik/dynamic:/etc/traefik/dynamic:ro
