@@ -8,7 +8,6 @@ source "$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)/lib.sh"
 
 color=${1:-}
 require_color "$color"
-write_scheduler_flag "$color" false
 
 for brand in "${BRANDS[@]}"; do
   svc=$(brand_service "$brand" "$color")

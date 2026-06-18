@@ -14,25 +14,25 @@ Operator-focused Docker Compose manager for running multi-brand `service-webhook
 - **Phase 1 = atomic color switch**: deploying "blue" means all brand APIs go blue together. Per-brand switching is a future enhancement.
 - **Sandbox** is NOT managed here — it runs as a single instance in the service-webhook repo (no blue/green needed).
 - **Cron containers** are NOT managed here — they stay in the service-webhook repo. Compose-manager only manages API services behind Traefik.
+- **Schedulers are disabled here** with `SCHEDULER_ENABLED=false`; scheduler ownership stays outside compose-manager.
 - App containers use `expose` (not `ports`); Traefik handles external routing.
 
 ### External dependencies
 
-Redis and MySQL are external services on the shared Docker network. Compose-manager does not include its own Redis or MySQL — it relies on the `service-webhook-redis` and MySQL containers from the service-webhook infra compose. Ensure the infra layer is running before starting compose-manager.
+Redis and MySQL are external services on the shared Docker network. Compose-manager does not include its own Redis or MySQL — it relies on the `service-webhook-redis` and MySQL containers from the service-webhook infra compose. Keep app runtime configuration such as DB credentials, Redis settings, logging, and request timeouts in the service-webhook deployment environment rather than in this manager's `.env`.
 
 ## Files
 
-- `docker-compose.yml` — Traefik, Redis, and per-brand blue/green API services. Uses YAML anchors (`x-api-verixa-common`, `x-api-lgpay-common`) to DRY blue/green pairs.
+- `docker-compose.yml` — Traefik and per-brand blue/green API services. Uses YAML anchors (`x-api-verixa-common`, `x-api-lgpay-common`) to DRY blue/green pairs.
 - `compose.build.yml` — local build override for all brand services.
 - `compose.registry.yml` — registry image/tag override for all brand services.
 - `traefik/traefik.yml` — static Traefik config.
 - `traefik/templates/active.yml.tmpl` — dynamic route template rendered by scripts. Contains per-brand routers and weighted services.
 - `scripts/*.sh` — deploy, readiness, switch, rollback, verify, and stop helpers.
-- `env/blue.env`, `env/green.env` — scheduler ownership flags managed by scripts (tracked in git; contain only `SCHEDULER_ENABLED`).
 
 ## Prerequisites
 
-1. Copy `.env.example` to `.env` and replace placeholders. Do not commit `.env`.
+1. Copy `.env.example` to `.env` and replace deployment placeholders. Do not commit `.env`.
 2. Ensure the shared external network exists and can reach dependencies such as MySQL/Redis/Laravel:
 
    ```sh
@@ -70,13 +70,13 @@ COMPOSE_MODE=registry ./scripts/deploy-color.sh green
 
 Example: blue is active, deploy green.
 
-1. Deploy inactive color with scheduler disabled and wait for all brand containers' `/readyz`:
+1. Deploy inactive API color and wait for all brand containers' `/readyz`:
 
    ```sh
    COMPOSE_MODE=registry ./scripts/deploy-color.sh green
    ```
 
-2. Promote green. The script writes `SCHEDULER_ENABLED=true` for green and `false` for blue, recreates all green brand containers, waits for `/readyz`, atomically renders/moves the Traefik dynamic config to route all brands to green, then disables/recreates blue containers best-effort:
+2. Promote green. The script recreates all green brand containers, waits for `/readyz`, then atomically renders/moves the Traefik dynamic config to route all brands to green:
 
    ```sh
    ./scripts/switch-active.sh green
@@ -101,9 +101,9 @@ Example: blue is active, deploy green.
    ./scripts/stop-color.sh blue
    ```
 
-## Scheduler safety
+## API-only scope
 
-The intended design is single scheduler ownership. `env/blue.env` and `env/green.env` contain only `SCHEDULER_ENABLED=true|false`; scripts manage these files and recreate containers when ownership changes. Keep the inactive color at `SCHEDULER_ENABLED=false`. If the application build does not yet implement `SCHEDULER_ENABLED`, do not run both colors against the same settlement data until that flag is available, or use an application/distributed lock that prevents duplicate scheduler execution.
+Compose-manager deploys only the `service-webhook` API containers required for blue/green public traffic. It does not deploy sandbox, cron, scheduler, Redis, MySQL, or Laravel containers. API containers are started with `SCHEDULER_ENABLED=false` so scheduler ownership remains in the service-webhook deployment layer.
 
 ## Manual compose commands
 
@@ -137,9 +137,6 @@ docker compose --env-file .env.example -f docker-compose.yml -f compose.registry
 | `LGPAY_INTERNAL_TRANSFER_BASE_URL`  | `http://lgpay-web:8000`          | Internal transfer URL for Lgpay                |
 | `VERIXA_BLUE_INTERNAL_TRANSFER_BASE_URL` | `http://verixa-org-web-blue:8000` | Internal transfer URL for Verixa blue      |
 | `LGPAY_BLUE_INTERNAL_TRANSFER_BASE_URL`  | `http://lgpay-web-blue:8000`      | Internal transfer URL for Lgpay blue       |
-| `DB_HOST`                           | `mysql`                          | Shared database host                           |
-| `DB_PORT`                           | `3306`                           | Shared database port                           |
-| `REDIS_ADDR`                        | `service-webhook-redis:6379`     | Redis address (external on shared network)     |
 | `SERVICE_WEBHOOK_PATH`              | `../verixa-code/service-webhook` | Source path for build mode                     |
 | `SERVICE_WEBHOOK_IMAGE`             | —                                | Registry image for registry mode               |
 | `SERVICE_WEBHOOK_VERSION`           | `latest`                         | Image tag/version                              |

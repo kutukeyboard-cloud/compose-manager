@@ -30,6 +30,7 @@ x-api-verixa-common: &api-verixa-common
     APP_ENV: ${APP_ENV:-production}
     APP_NAME: Verixa
     APP_PORT: ${VERIXA_PORT:-8900}
+    SCHEDULER_ENABLED: "false"
     DB_HOST: ${DB_HOST:-mysql}
     DB_PORT: ${DB_PORT:-3306}
     DB_USER: ${DB_USER:-root}
@@ -61,6 +62,7 @@ x-api-lgpay-common: &api-lgpay-common
     APP_ENV: ${APP_ENV:-production}
     APP_NAME: Lgpay
     APP_PORT: ${LGPAY_PORT:-8902}
+    SCHEDULER_ENABLED: "false"
     DB_HOST: ${DB_HOST:-mysql}
     DB_PORT: ${DB_PORT:-3306}
     DB_USER: ${DB_USER:-root}
@@ -108,8 +110,6 @@ services:
     <<: *api-verixa-common
     container_name: ${COMPOSE_PROJECT_NAME:-service-webhook-bg}-api-verixa-blue
     image: ${SERVICE_WEBHOOK_IMAGE:-service-webhook}:${SERVICE_WEBHOOK_VERSION:-latest}
-    env_file:
-      - ./env/blue.env
     environment:
       <<: *api-verixa-env
       DEPLOY_COLOR: blue
@@ -119,8 +119,6 @@ services:
     <<: *api-verixa-common
     container_name: ${COMPOSE_PROJECT_NAME:-service-webhook-bg}-api-verixa-green
     image: ${SERVICE_WEBHOOK_IMAGE:-service-webhook}:${SERVICE_WEBHOOK_VERSION:-latest}
-    env_file:
-      - ./env/green.env
     environment:
       <<: *api-verixa-env
       DEPLOY_COLOR: green
@@ -132,8 +130,6 @@ services:
     <<: *api-lgpay-common
     container_name: ${COMPOSE_PROJECT_NAME:-service-webhook-bg}-api-lgpay-blue
     image: ${SERVICE_WEBHOOK_IMAGE:-service-webhook}:${SERVICE_WEBHOOK_VERSION:-latest}
-    env_file:
-      - ./env/blue.env
     environment:
       <<: *api-lgpay-env
       DEPLOY_COLOR: blue
@@ -143,8 +139,6 @@ services:
     <<: *api-lgpay-common
     container_name: ${COMPOSE_PROJECT_NAME:-service-webhook-bg}-api-lgpay-green
     image: ${SERVICE_WEBHOOK_IMAGE:-service-webhook}:${SERVICE_WEBHOOK_VERSION:-latest}
-    env_file:
-      - ./env/green.env
     environment:
       <<: *api-lgpay-env
       DEPLOY_COLOR: green

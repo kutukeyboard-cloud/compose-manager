@@ -79,13 +79,6 @@ color_services() {
   done
 }
 
-write_scheduler_flag() {
-  local color=$1 enabled=$2
-  require_color "$color"
-  case "$enabled" in true|false) ;; *) echo "enabled must be true or false" >&2; exit 2 ;; esac
-  printf 'SCHEDULER_ENABLED=%s\n' "$enabled" > "$ROOT_DIR/env/$color.env"
-}
-
 render_active_config() {
   local color=$1 tmp
   require_color "$color"

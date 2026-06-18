@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
-# Roll traffic and scheduler ownership back to the supplied color.
+# Roll traffic back to the supplied API color.
 
 # shellcheck source=scripts/lib.sh
 source "$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)/lib.sh"
