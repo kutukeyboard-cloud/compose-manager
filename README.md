@@ -67,6 +67,32 @@ Redis, MySQL, Laravel, and other app dependencies are external services on the s
 
 Set `COMPOSE_MODE=build` for local source builds or `COMPOSE_MODE=registry` for image pulls. The scripts default to registry mode.
 
+### Make targets
+
+The `Makefile` wraps the same scripts for all-brand workflows and uses the same Compose files for targeted service workflows.
+
+```sh
+make config MODE=registry
+make deploy COLOR=green MODE=registry VERSION=v1.2.3
+make deploy-service SERVICE=api-sandbox COLOR=green MODE=registry VERSION=v1.2.3
+make switch COLOR=green
+make verify
+make readyz-service SERVICE=api-sandbox COLOR=green
+make rollback COLOR=blue
+make stop COLOR=blue
+make stop-service SERVICE=api-sandbox COLOR=blue
+```
+
+Use `VERSION=...` to override `SERVICE_WEBHOOK_VERSION` for one command without editing `.env`. Use `IMAGE=...` the same way for `SERVICE_WEBHOOK_IMAGE`.
+Use `SERVICE=api-verixa`, `SERVICE=api-lgpay`, or `SERVICE=api-sandbox` with `*-service` targets to operate on one color-specific service without deploying all brands.
+
+For example, deploy only sandbox green from registry tag `v1.0.0`:
+
+```sh
+make deploy-service SERVICE=api-sandbox COLOR=green MODE=registry VERSION=v1.0.0
+make readyz-service SERVICE=api-sandbox COLOR=green
+```
+
 ### Local build
 
 ```sh

@@ -6,12 +6,20 @@ ENV_FILE="$ROOT_DIR/.env"
 DYNAMIC_TEMPLATE="$ROOT_DIR/traefik/templates/active.yml.tmpl"
 DYNAMIC_ACTIVE="$ROOT_DIR/traefik/dynamic/active.yml"
 
+COMPOSE_MODE_OVERRIDE=${COMPOSE_MODE-}
+SERVICE_WEBHOOK_IMAGE_OVERRIDE=${SERVICE_WEBHOOK_IMAGE-}
+SERVICE_WEBHOOK_VERSION_OVERRIDE=${SERVICE_WEBHOOK_VERSION-}
+
 if [[ -f "$ENV_FILE" ]]; then
   set -a
   # shellcheck disable=SC1090
   source "$ENV_FILE"
   set +a
 fi
+
+[[ -n "$COMPOSE_MODE_OVERRIDE" ]] && COMPOSE_MODE=$COMPOSE_MODE_OVERRIDE
+[[ -n "$SERVICE_WEBHOOK_IMAGE_OVERRIDE" ]] && SERVICE_WEBHOOK_IMAGE=$SERVICE_WEBHOOK_IMAGE_OVERRIDE
+[[ -n "$SERVICE_WEBHOOK_VERSION_OVERRIDE" ]] && SERVICE_WEBHOOK_VERSION=$SERVICE_WEBHOOK_VERSION_OVERRIDE
 
 # ── Brand registry ──────────────────────────────────────────────────────────
 # All managed brands. Phase 1 = atomic color switch (all brands switch together).
