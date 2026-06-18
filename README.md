@@ -16,6 +16,23 @@ Operator-focused Docker Compose manager for running multi-brand `service-webhook
 - **Cron containers** are NOT managed here — they stay in the service-webhook repo. Compose-manager only manages API services behind Traefik.
 - **Schedulers are disabled here** with `SCHEDULER_ENABLED=false`; scheduler ownership stays outside compose-manager.
 - App containers use `expose` (not `ports`); Traefik handles external routing.
+- Public routing is port-based, not hostname-based. No DNS or `/etc/hosts` entry is required.
+
+### Public access
+
+After an active color is selected, call each brand through the VPS host/IP and its Traefik port:
+
+```sh
+curl http://127.0.0.1:8900/readyz  # Verixa
+curl http://127.0.0.1:8902/readyz  # Lgpay
+```
+
+From another machine on the same network, replace `127.0.0.1` with the VPS IP:
+
+```sh
+curl http://<vps-ip>:8900/readyz  # Verixa
+curl http://<vps-ip>:8902/readyz  # Lgpay
+```
 
 ### External dependencies
 
@@ -41,6 +58,7 @@ Redis and MySQL are external services on the shared Docker network. Compose-mana
 
    Or set `SHARED_NETWORK_NAME` in `.env` to an existing Docker network.
 3. Ensure `service-webhook` has unauthenticated `GET /readyz`; scripts use it for promotion checks.
+4. Ensure the configured public ports are available on the VPS. Defaults are `8900` for Verixa, `8902` for Lgpay, and `8080` for the Traefik dashboard.
 
 ## Workflows
 
@@ -50,7 +68,7 @@ Set `COMPOSE_MODE=build` for local source builds or `COMPOSE_MODE=registry` for 
 
 ```sh
 cp .env.example .env
-# edit .env, including SERVICE_WEBHOOK_PATH and public brand ports
+# edit .env, including SERVICE_WEBHOOK_PATH and public ports if needed
 COMPOSE_MODE=build ./scripts/deploy-color.sh blue
 ./scripts/switch-active.sh blue
 ./scripts/verify-active.sh
@@ -60,7 +78,7 @@ COMPOSE_MODE=build ./scripts/deploy-color.sh blue
 
 ```sh
 cp .env.example .env
-# edit .env, including SERVICE_WEBHOOK_IMAGE, SERVICE_WEBHOOK_VERSION, and public brand ports
+# edit .env, including SERVICE_WEBHOOK_IMAGE, SERVICE_WEBHOOK_VERSION, and public ports if needed
 COMPOSE_MODE=registry ./scripts/deploy-color.sh green
 ./scripts/switch-active.sh green
 ./scripts/verify-active.sh
@@ -87,6 +105,8 @@ Example: blue is active, deploy green.
    ```sh
    ./scripts/verify-active.sh
    ```
+
+   By default this checks `http://127.0.0.1:8900/readyz` and `http://127.0.0.1:8902/readyz`. Override `VERIXA_VERIFY_URL` or `LGPAY_VERIFY_URL` if verification must use another address.
 
 4. Roll back if needed:
 
