@@ -1,15 +1,15 @@
 http:
   routers:
     api-verixa:
-      rule: "Host(`__SERVICE_WEBHOOK_HOST__`)"
+      rule: "PathPrefix(`/`)"
       entryPoints:
-        - web
+        - verixa
       service: api-verixa-weighted
 
     api-lgpay:
-      rule: "Host(`__LGPAY_WEBHOOK_HOST__`)"
+      rule: "PathPrefix(`/`)"
       entryPoints:
-        - web
+        - lgpay
       service: api-lgpay-weighted
 
   services:

@@ -3,8 +3,10 @@ api:
   insecure: true
 
 entryPoints:
-  web:
-    address: ":80"
+  verixa:
+    address: ":8900"
+  lgpay:
+    address: ":8902"
 
 providers:
   file:

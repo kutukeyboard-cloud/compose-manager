@@ -1,15 +1,15 @@
 # service-webhook compose-manager
 
-Operator-focused Docker Compose manager for running multi-brand `service-webhook` APIs behind Traefik with blue/green deployment. Each brand (Verixa, Lgpay) gets its own blue/green pair and independent Traefik routing. Traefik uses the file provider; changing `traefik/dynamic/active.yml` atomically switches public traffic for all brands between blue and green.
+Operator-focused Docker Compose manager for running multi-brand `service-webhook` APIs behind Traefik with blue/green deployment. Each brand (Verixa, Lgpay) gets its own blue/green pair and independent Traefik port. Traefik uses the file provider; changing `traefik/dynamic/active.yml` atomically switches public traffic for all brands between blue and green.
 
 ## Architecture
 
 ### Multi-brand blue/green
 
-| Brand   | Blue service      | Green service      | Port  | DB              | Traefik host rule               |
-|---------|-------------------|--------------------|-------|-----------------|---------------------------------|
-| Verixa  | `api-verixa-blue` | `api-verixa-green` | 8900  | `verixa_prod`   | `Host($SERVICE_WEBHOOK_HOST)`   |
-| Lgpay   | `api-lgpay-blue`  | `api-lgpay-green`  | 8902  | `lgpay_prod`    | `Host($LGPAY_WEBHOOK_HOST)`    |
+| Brand   | Blue service      | Green service      | App port | Public Traefik port | DB            |
+|---------|-------------------|--------------------|----------|---------------------|---------------|
+| Verixa  | `api-verixa-blue` | `api-verixa-green` | 8900     | 8900                | `verixa_prod` |
+| Lgpay   | `api-lgpay-blue`  | `api-lgpay-green`  | 8902     | 8902                | `lgpay_prod`  |
 
 - **Phase 1 = atomic color switch**: deploying "blue" means all brand APIs go blue together. Per-brand switching is a future enhancement.
 - **Sandbox** is NOT managed here — it runs as a single instance in the service-webhook repo (no blue/green needed).
@@ -50,7 +50,7 @@ Set `COMPOSE_MODE=build` for local source builds or `COMPOSE_MODE=registry` for 
 
 ```sh
 cp .env.example .env
-# edit .env, including SERVICE_WEBHOOK_PATH and brand host rules
+# edit .env, including SERVICE_WEBHOOK_PATH and public brand ports
 COMPOSE_MODE=build ./scripts/deploy-color.sh blue
 ./scripts/switch-active.sh blue
 ./scripts/verify-active.sh
@@ -60,7 +60,7 @@ COMPOSE_MODE=build ./scripts/deploy-color.sh blue
 
 ```sh
 cp .env.example .env
-# edit .env, including SERVICE_WEBHOOK_IMAGE, SERVICE_WEBHOOK_VERSION, and brand host rules
+# edit .env, including SERVICE_WEBHOOK_IMAGE, SERVICE_WEBHOOK_VERSION, and public brand ports
 COMPOSE_MODE=registry ./scripts/deploy-color.sh green
 ./scripts/switch-active.sh green
 ./scripts/verify-active.sh
@@ -125,10 +125,9 @@ docker compose --env-file .env.example -f docker-compose.yml -f compose.registry
 | Variable                            | Default                          | Description                                    |
 |-------------------------------------|----------------------------------|------------------------------------------------|
 | `COMPOSE_PROJECT_NAME`              | `service-webhook-bg`             | Docker Compose project name                    |
-| `TRAEFIK_HTTP_PORT`                 | `80`                             | Traefik public HTTP port                       |
+| `VERIXA_TRAEFIK_PORT`               | `8900`                           | Verixa public Traefik port                     |
+| `LGPAY_TRAEFIK_PORT`                | `8902`                           | Lgpay public Traefik port                      |
 | `TRAEFIK_DASHBOARD_PORT`            | `8080`                           | Traefik dashboard port                         |
-| `SERVICE_WEBHOOK_HOST`              | `webhook.example.test`           | Traefik Host rule for Verixa brand             |
-| `LGPAY_WEBHOOK_HOST`                | `lgpay-webhook.example.test`     | Traefik Host rule for Lgpay brand              |
 | `VERIXA_PORT`                       | `8900`                           | Internal port for Verixa API services          |
 | `LGPAY_PORT`                        | `8902`                           | Internal port for Lgpay API services           |
 | `VERIXA_DB_NAME`                    | `verixa_prod`                    | Database name for Verixa                       |

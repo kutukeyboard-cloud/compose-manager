@@ -21,10 +21,6 @@ BRANDS=(verixa lgpay)
 VERIXA_PORT=${VERIXA_PORT:-8900}
 LGPAY_PORT=${LGPAY_PORT:-8902}
 
-# Per-brand host mapping
-SERVICE_WEBHOOK_HOST=${SERVICE_WEBHOOK_HOST:-webhook.example.test}
-LGPAY_WEBHOOK_HOST=${LGPAY_WEBHOOK_HOST:-lgpay-webhook.example.test}
-
 COMPOSE_MODE=${COMPOSE_MODE:-registry}
 
 compose_files=("-f" "$ROOT_DIR/docker-compose.yml")
@@ -88,8 +84,6 @@ render_active_config() {
     -e "s/__ACTIVE_COLOR__/$color/g" \
     -e "s/__VERIXA_PORT__/$VERIXA_PORT/g" \
     -e "s/__LGPAY_PORT__/$LGPAY_PORT/g" \
-    -e "s/__SERVICE_WEBHOOK_HOST__/$SERVICE_WEBHOOK_HOST/g" \
-    -e "s/__LGPAY_WEBHOOK_HOST__/$LGPAY_WEBHOOK_HOST/g" \
     "$DYNAMIC_TEMPLATE" > "$tmp"
   mv "$tmp" "$DYNAMIC_ACTIVE"
 }

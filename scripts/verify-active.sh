@@ -1,16 +1,15 @@
 #!/usr/bin/env bash
 set -euo pipefail
-# Verify Traefik routes each brand's public host to a healthy active backend.
+# Verify Traefik routes each brand's public port to a healthy active backend.
 
 # shellcheck source=scripts/lib.sh
 source "$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)/lib.sh"
 
-url=${1:-"http://127.0.0.1:${TRAEFIK_HTTP_PORT:-80}/readyz"}
+verixa_url=${VERIXA_VERIFY_URL:-"http://127.0.0.1:${VERIXA_TRAEFIK_PORT:-8900}/readyz"}
+lgpay_url=${LGPAY_VERIFY_URL:-"http://127.0.0.1:${LGPAY_TRAEFIK_PORT:-8902}/readyz"}
 
-# Check Verixa route
-curl -fsS -H "Host: $SERVICE_WEBHOOK_HOST" "$url" >/dev/null
-echo "Traefik readiness check passed for Host: $SERVICE_WEBHOOK_HOST at $url"
+curl -fsS "$verixa_url" >/dev/null
+echo "Traefik readiness check passed for Verixa at $verixa_url"
 
-# Check Lgpay route
-curl -fsS -H "Host: $LGPAY_WEBHOOK_HOST" "$url" >/dev/null
-echo "Traefik readiness check passed for Host: $LGPAY_WEBHOOK_HOST at $url"
+curl -fsS "$lgpay_url" >/dev/null
+echo "Traefik readiness check passed for Lgpay at $lgpay_url"
