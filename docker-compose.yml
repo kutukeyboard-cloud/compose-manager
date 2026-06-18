@@ -18,6 +18,8 @@ x-api-common: &api-common
 
 x-api-verixa-common: &api-verixa-common
   <<: *api-common
+  env_file:
+    - ${VERIXA_APP_ENV_FILE:-/dev/null}
   expose:
     - "${VERIXA_PORT:-8900}"
   healthcheck:
@@ -27,29 +29,16 @@ x-api-verixa-common: &api-verixa-common
     retries: 6
     start_period: 20s
   environment: &api-verixa-env
-    APP_ENV: ${APP_ENV:-production}
-    APP_NAME: Verixa
     APP_PORT: ${VERIXA_PORT:-8900}
     SCHEDULER_ENABLED: "false"
-    DB_HOST: ${DB_HOST:-mysql}
-    DB_PORT: ${DB_PORT:-3306}
-    DB_USER: ${DB_USER:-root}
-    DB_PASS: ${DB_PASS:-}
-    DB_NAME: ${VERIXA_DB_NAME:-verixa_prod}
-    DB_CHARSET: ${DB_CHARSET:-utf8mb4}
-    REDIS_ADDR: ${REDIS_ADDR:-service-webhook-redis:6379}
-    REDIS_PASSWORD: ${REDIS_PASSWORD:-}
-    REDIS_DB: ${REDIS_DB:-0}
-    LOG_LEVEL: ${LOG_LEVEL:-0}
-    REQUEST_TIMEOUT_SECONDS: ${REQUEST_TIMEOUT_SECONDS:-15}
-    INTERNAL_TRANSFER_BASE_URL: ${VERIXA_INTERNAL_TRANSFER_BASE_URL:-http://verixa-org-web:8000}
-    INTERNAL_TRANSFER_PATH: ${INTERNAL_TRANSFER_PATH:-/api/v1/internal-transfer}
   labels:
     promtail.labels.service_type: go
     promtail.labels.service_name: webhook
 
 x-api-lgpay-common: &api-lgpay-common
   <<: *api-common
+  env_file:
+    - ${LGPAY_APP_ENV_FILE:-/dev/null}
   expose:
     - "${LGPAY_PORT:-8902}"
   healthcheck:
@@ -59,23 +48,8 @@ x-api-lgpay-common: &api-lgpay-common
     retries: 6
     start_period: 20s
   environment: &api-lgpay-env
-    APP_ENV: ${APP_ENV:-production}
-    APP_NAME: Lgpay
     APP_PORT: ${LGPAY_PORT:-8902}
     SCHEDULER_ENABLED: "false"
-    DB_HOST: ${DB_HOST:-mysql}
-    DB_PORT: ${DB_PORT:-3306}
-    DB_USER: ${DB_USER:-root}
-    DB_PASS: ${DB_PASS:-}
-    DB_NAME: ${LGPAY_DB_NAME:-lgpay_prod}
-    DB_CHARSET: ${DB_CHARSET:-utf8mb4}
-    REDIS_ADDR: ${REDIS_ADDR:-service-webhook-redis:6379}
-    REDIS_PASSWORD: ${REDIS_PASSWORD:-}
-    REDIS_DB: ${REDIS_DB:-0}
-    LOG_LEVEL: ${LOG_LEVEL:-0}
-    REQUEST_TIMEOUT_SECONDS: ${REQUEST_TIMEOUT_SECONDS:-15}
-    INTERNAL_TRANSFER_BASE_URL: ${LGPAY_INTERNAL_TRANSFER_BASE_URL:-http://lgpay-web:8000}
-    INTERNAL_TRANSFER_PATH: ${INTERNAL_TRANSFER_PATH:-/api/v1/internal-transfer}
   labels:
     promtail.labels.service_type: go
     promtail.labels.service_name: webhook
@@ -114,7 +88,6 @@ services:
     environment:
       <<: *api-verixa-env
       DEPLOY_COLOR: blue
-      INTERNAL_TRANSFER_BASE_URL: ${VERIXA_BLUE_INTERNAL_TRANSFER_BASE_URL:-http://verixa-org-web-blue:8000}
 
   api-verixa-green:
     <<: *api-verixa-common
@@ -123,7 +96,6 @@ services:
     environment:
       <<: *api-verixa-env
       DEPLOY_COLOR: green
-      INTERNAL_TRANSFER_BASE_URL: ${VERIXA_GREEN_INTERNAL_TRANSFER_BASE_URL:-http://verixa-org-web:8000}
 
   # ── Lgpay blue/green ──────────────────────────────────────────────────────
 
@@ -134,7 +106,6 @@ services:
     environment:
       <<: *api-lgpay-env
       DEPLOY_COLOR: blue
-      INTERNAL_TRANSFER_BASE_URL: ${LGPAY_BLUE_INTERNAL_TRANSFER_BASE_URL:-http://lgpay-web-blue:8000}
 
   api-lgpay-green:
     <<: *api-lgpay-common
@@ -143,7 +114,6 @@ services:
     environment:
       <<: *api-lgpay-env
       DEPLOY_COLOR: green
-      INTERNAL_TRANSFER_BASE_URL: ${LGPAY_GREEN_INTERNAL_TRANSFER_BASE_URL:-http://lgpay-web:8000}
 
 # ── Networks ────────────────────────────────────────────────────────────────
 

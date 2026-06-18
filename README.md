@@ -6,10 +6,10 @@ Operator-focused Docker Compose manager for running multi-brand `service-webhook
 
 ### Multi-brand blue/green
 
-| Brand   | Blue service      | Green service      | App port | Public Traefik port | DB            |
-|---------|-------------------|--------------------|----------|---------------------|---------------|
-| Verixa  | `api-verixa-blue` | `api-verixa-green` | 8900     | 8900                | `verixa_prod` |
-| Lgpay   | `api-lgpay-blue`  | `api-lgpay-green`  | 8902     | 8902                | `lgpay_prod`  |
+| Brand   | Blue service      | Green service      | App port | Public Traefik port |
+|---------|-------------------|--------------------|----------|---------------------|
+| Verixa  | `api-verixa-blue` | `api-verixa-green` | 8900     | 8900                |
+| Lgpay   | `api-lgpay-blue`  | `api-lgpay-green`  | 8902     | 8902                |
 
 - **Phase 1 = atomic color switch**: deploying "blue" means all brand APIs go blue together. Per-brand switching is a future enhancement.
 - **Sandbox** is NOT managed here — it runs as a single instance in the service-webhook repo (no blue/green needed).
@@ -36,7 +36,7 @@ curl http://<vps-ip>:8902/readyz  # Lgpay
 
 ### External dependencies
 
-Redis and MySQL are external services on the shared Docker network. Compose-manager does not include its own Redis or MySQL — it relies on the `service-webhook-redis` and MySQL containers from the service-webhook infra compose. Keep app runtime configuration such as DB credentials, Redis settings, logging, and request timeouts in the service-webhook deployment environment rather than in this manager's `.env`.
+Redis, MySQL, Laravel, and other app dependencies are external services on the shared Docker network. Compose-manager does not include them and does not own their runtime settings. Keep app configuration such as DB credentials, Redis settings, internal transfer URLs, logging, and request timeouts in the service-webhook env files referenced by `VERIXA_APP_ENV_FILE` and `LGPAY_APP_ENV_FILE`.
 
 ## Files
 
@@ -50,15 +50,16 @@ Redis and MySQL are external services on the shared Docker network. Compose-mana
 ## Prerequisites
 
 1. Copy `.env.example` to `.env` and replace deployment placeholders. Do not commit `.env`.
-2. Ensure the shared external network exists and can reach dependencies such as MySQL/Redis/Laravel:
+2. Set `VERIXA_APP_ENV_FILE` and `LGPAY_APP_ENV_FILE` to service-webhook runtime env files for each brand. These files should contain app config such as DB, Redis, `APP_NAME`, and internal transfer settings.
+3. Ensure the shared external network exists and can reach dependencies such as MySQL/Redis/Laravel:
 
    ```sh
    docker network create shared
    ```
 
    Or set `SHARED_NETWORK_NAME` in `.env` to an existing Docker network.
-3. Ensure `service-webhook` has unauthenticated `GET /readyz`; scripts use it for promotion checks.
-4. Ensure the configured public ports are available on the VPS. Defaults are `8900` for Verixa, `8902` for Lgpay, and `8080` for the Traefik dashboard.
+4. Ensure `service-webhook` has unauthenticated `GET /readyz`; scripts use it for promotion checks.
+5. Ensure the configured public ports are available on the VPS. Defaults are `8900` for Verixa, `8902` for Lgpay, and `8080` for the Traefik dashboard.
 
 ## Workflows
 
@@ -68,7 +69,7 @@ Set `COMPOSE_MODE=build` for local source builds or `COMPOSE_MODE=registry` for 
 
 ```sh
 cp .env.example .env
-# edit .env, including SERVICE_WEBHOOK_PATH and public ports if needed
+# edit .env, including SERVICE_WEBHOOK_PATH, app env file paths, and public ports if needed
 COMPOSE_MODE=build ./scripts/deploy-color.sh blue
 ./scripts/switch-active.sh blue
 ./scripts/verify-active.sh
@@ -78,7 +79,7 @@ COMPOSE_MODE=build ./scripts/deploy-color.sh blue
 
 ```sh
 cp .env.example .env
-# edit .env, including SERVICE_WEBHOOK_IMAGE, SERVICE_WEBHOOK_VERSION, and public ports if needed
+# edit .env, including SERVICE_WEBHOOK_IMAGE, SERVICE_WEBHOOK_VERSION, app env file paths, and public ports if needed
 COMPOSE_MODE=registry ./scripts/deploy-color.sh green
 ./scripts/switch-active.sh green
 ./scripts/verify-active.sh
@@ -125,6 +126,17 @@ Example: blue is active, deploy green.
 
 Compose-manager deploys only the `service-webhook` API containers required for blue/green public traffic. It does not deploy sandbox, cron, scheduler, Redis, MySQL, or Laravel containers. API containers are started with `SCHEDULER_ENABLED=false` so scheduler ownership remains in the service-webhook deployment layer.
 
+This repository owns zero-downtime deployment mechanics only:
+
+- image/build selection
+- blue/green API containers
+- app ports used for health checks and Traefik backends
+- public Traefik ports
+- `DEPLOY_COLOR`
+- `SCHEDULER_ENABLED=false`
+
+Brand-specific runtime configuration is loaded from external service-webhook env files via `VERIXA_APP_ENV_FILE` and `LGPAY_APP_ENV_FILE`.
+
 ## Manual compose commands
 
 Render an initial route if you are not using scripts:
@@ -150,12 +162,8 @@ docker compose --env-file .env.example -f docker-compose.yml -f compose.registry
 | `TRAEFIK_DASHBOARD_PORT`            | `8080`                           | Traefik dashboard port                         |
 | `VERIXA_PORT`                       | `8900`                           | Internal port for Verixa API services          |
 | `LGPAY_PORT`                        | `8902`                           | Internal port for Lgpay API services           |
-| `VERIXA_DB_NAME`                    | `verixa_prod`                    | Database name for Verixa                       |
-| `LGPAY_DB_NAME`                     | `lgpay_prod`                     | Database name for Lgpay                        |
-| `VERIXA_INTERNAL_TRANSFER_BASE_URL` | `http://verixa-org-web:8000`     | Internal transfer URL for Verixa               |
-| `LGPAY_INTERNAL_TRANSFER_BASE_URL`  | `http://lgpay-web:8000`          | Internal transfer URL for Lgpay                |
-| `VERIXA_BLUE_INTERNAL_TRANSFER_BASE_URL` | `http://verixa-org-web-blue:8000` | Internal transfer URL for Verixa blue      |
-| `LGPAY_BLUE_INTERNAL_TRANSFER_BASE_URL`  | `http://lgpay-web-blue:8000`      | Internal transfer URL for Lgpay blue       |
+| `VERIXA_APP_ENV_FILE`               | `/dev/null`                      | External service-webhook env file for Verixa   |
+| `LGPAY_APP_ENV_FILE`                | `/dev/null`                      | External service-webhook env file for Lgpay    |
 | `SERVICE_WEBHOOK_PATH`              | `../verixa-code/service-webhook` | Source path for build mode                     |
 | `SERVICE_WEBHOOK_IMAGE`             | —                                | Registry image for registry mode               |
 | `SERVICE_WEBHOOK_VERSION`           | `latest`                         | Image tag/version                              |
