@@ -18,11 +18,13 @@ endif
 
 export COMPOSE_MODE := $(MODE)
 
-.PHONY: help config deploy deploy-service switch switch-service rollback verify readyz readyz-service healthcheck status status-service stop stop-service
+.PHONY: help config active active-service deploy deploy-service switch switch-service rollback verify readyz readyz-service healthcheck status status-service stop stop-service
 
 help:
 	@printf '%s\n' 'compose-manager targets:'
 	@printf '%s\n' '  make config MODE=registry|build [ENV_FILE=.env] [VERSION=v1.2.3] [IMAGE=repo/image]'
+	@printf '%s\n' '  make active'
+	@printf '%s\n' '  make active-service SERVICE=api-sandbox|api-verixa|api-lgpay'
 	@printf '%s\n' '  make deploy COLOR=blue|green MODE=registry|build [VERSION=v1.2.3] [IMAGE=repo/image]'
 	@printf '%s\n' '  make deploy-service SERVICE=api-sandbox|api-verixa|api-lgpay COLOR=blue|green MODE=registry|build [VERSION=v1.2.3]'
 	@printf '%s\n' '  make switch COLOR=blue|green'
@@ -39,6 +41,17 @@ help:
 
 config:
 	$(COMPOSE) config
+
+active:
+	@test -f traefik/dynamic/active.yml || { echo "traefik/dynamic/active.yml does not exist. Run make switch COLOR=blue first." >&2; exit 1; }
+	@sed -nE 's/^[[:space:]]*- name: (api-[a-z]+)-(blue|green)$$/\1=\2/p' traefik/dynamic/active.yml
+
+active-service:
+	@case "$(SERVICE)" in api-verixa|api-lgpay|api-sandbox) ;; *) echo "Unsupported SERVICE=$(SERVICE) (use api-verixa, api-lgpay, or api-sandbox)" >&2; exit 2 ;; esac
+	@test -f traefik/dynamic/active.yml || { echo "traefik/dynamic/active.yml does not exist. Run make switch COLOR=blue first." >&2; exit 1; }
+	@color=$$(sed -nE 's/^[[:space:]]*- name: ($(SERVICE))-(blue|green)$$/\1=\2/p' traefik/dynamic/active.yml | head -n 1); \
+	if [[ -z "$$color" ]]; then echo "No active color found for $(SERVICE)" >&2; exit 1; fi; \
+	echo "$$color"
 
 deploy:
 	./scripts/deploy-color.sh $(COLOR)

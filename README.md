@@ -73,6 +73,8 @@ The `Makefile` wraps the same scripts for all-brand workflows and uses the same 
 
 ```sh
 make config MODE=registry
+make active
+make active-service SERVICE=api-sandbox
 make deploy COLOR=green MODE=registry VERSION=v1.2.3
 make deploy-service SERVICE=api-sandbox COLOR=green MODE=registry VERSION=v1.2.3
 make switch COLOR=green
