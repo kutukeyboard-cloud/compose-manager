@@ -76,6 +76,7 @@ make config MODE=registry
 make deploy COLOR=green MODE=registry VERSION=v1.2.3
 make deploy-service SERVICE=api-sandbox COLOR=green MODE=registry VERSION=v1.2.3
 make switch COLOR=green
+make switch-service SERVICE=api-sandbox COLOR=green VERSION=v1.2.3
 make verify
 make readyz-service SERVICE=api-sandbox COLOR=green
 make rollback COLOR=blue
@@ -85,12 +86,14 @@ make stop-service SERVICE=api-sandbox COLOR=blue
 
 Use `VERSION=...` to override `SERVICE_WEBHOOK_VERSION` for one command without editing `.env`. Use `IMAGE=...` the same way for `SERVICE_WEBHOOK_IMAGE`.
 Use `SERVICE=api-verixa`, `SERVICE=api-lgpay`, or `SERVICE=api-sandbox` with `*-service` targets to operate on one color-specific service without deploying all brands.
+Use `switch-service` to switch only one public Traefik route while preserving the current active colors for the other services.
 
 For example, deploy only sandbox green from registry tag `v1.0.0`:
 
 ```sh
 make deploy-service SERVICE=api-sandbox COLOR=green MODE=registry VERSION=v1.0.0
 make readyz-service SERVICE=api-sandbox COLOR=green
+make switch-service SERVICE=api-sandbox COLOR=green VERSION=v1.0.0
 ```
 
 ### Local build

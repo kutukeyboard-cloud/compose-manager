@@ -18,7 +18,7 @@ endif
 
 export COMPOSE_MODE := $(MODE)
 
-.PHONY: help config deploy deploy-service switch rollback verify readyz readyz-service healthcheck status status-service stop stop-service
+.PHONY: help config deploy deploy-service switch switch-service rollback verify readyz readyz-service healthcheck status status-service stop stop-service
 
 help:
 	@printf '%s\n' 'compose-manager targets:'
@@ -26,6 +26,7 @@ help:
 	@printf '%s\n' '  make deploy COLOR=blue|green MODE=registry|build [VERSION=v1.2.3] [IMAGE=repo/image]'
 	@printf '%s\n' '  make deploy-service SERVICE=api-sandbox|api-verixa|api-lgpay COLOR=blue|green MODE=registry|build [VERSION=v1.2.3]'
 	@printf '%s\n' '  make switch COLOR=blue|green'
+	@printf '%s\n' '  make switch-service SERVICE=api-sandbox|api-verixa|api-lgpay COLOR=blue|green [VERSION=v1.2.3]'
 	@printf '%s\n' '  make rollback COLOR=blue|green'
 	@printf '%s\n' '  make verify'
 	@printf '%s\n' '  make readyz COLOR=blue|green'
@@ -54,6 +55,9 @@ deploy-service:
 
 switch:
 	./scripts/switch-active.sh $(COLOR)
+
+switch-service:
+	./scripts/switch-service.sh $(SERVICE) $(COLOR)
 
 rollback:
 	./scripts/rollback.sh $(COLOR)

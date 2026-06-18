@@ -60,6 +60,23 @@ other_color() {
   fi
 }
 
+require_service_name() {
+  case "${1:-}" in
+    api-verixa|api-lgpay|api-sandbox) ;;
+    *) echo "Usage: $0 <api-verixa|api-lgpay|api-sandbox> <blue|green>" >&2; exit 2 ;;
+  esac
+}
+
+service_brand() {
+  local service=$1
+  case "$service" in
+    api-verixa) echo "verixa" ;;
+    api-lgpay) echo "lgpay" ;;
+    api-sandbox) echo "sandbox" ;;
+    *) echo "Unknown service: $service" >&2; exit 2 ;;
+  esac
+}
+
 # Return the internal port for a brand
 brand_port() {
   local brand=$1
@@ -88,10 +105,32 @@ color_services() {
 render_active_config() {
   local color=$1 tmp
   require_color "$color"
+  render_active_config_for_colors "$color" "$color" "$color"
+}
+
+active_color_for_brand() {
+  local brand=$1 color
+  if [[ -f "$DYNAMIC_ACTIVE" ]]; then
+    color=$(sed -nE "s/^[[:space:]]*- name: api-${brand}-(blue|green)$/\1/p" "$DYNAMIC_ACTIVE" | head -n 1)
+    if [[ -n "$color" ]]; then
+      echo "$color"
+      return
+    fi
+  fi
+  echo blue
+}
+
+render_active_config_for_colors() {
+  local verixa_color=$1 lgpay_color=$2 sandbox_color=$3 tmp
+  require_color "$verixa_color"
+  require_color "$lgpay_color"
+  require_color "$sandbox_color"
   mkdir -p "$ROOT_DIR/traefik/dynamic"
   tmp=$(mktemp "$ROOT_DIR/traefik/dynamic/.active.yml.XXXXXX")
   sed \
-    -e "s/__ACTIVE_COLOR__/$color/g" \
+    -e "s/__VERIXA_ACTIVE_COLOR__/$verixa_color/g" \
+    -e "s/__LGPAY_ACTIVE_COLOR__/$lgpay_color/g" \
+    -e "s/__SANDBOX_ACTIVE_COLOR__/$sandbox_color/g" \
     -e "s/__VERIXA_PORT__/$VERIXA_PORT/g" \
     -e "s/__LGPAY_PORT__/$LGPAY_PORT/g" \
     -e "s/__SANDBOX_PORT__/$SANDBOX_PORT/g" \
