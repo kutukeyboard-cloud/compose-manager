@@ -1,0 +1,27 @@
+http:
+  routers:
+    service-webhook:
+      rule: "Host(`__SERVICE_WEBHOOK_HOST__`)"
+      entryPoints:
+        - web
+      service: service-webhook-__ACTIVE_COLOR__
+
+  services:
+    service-webhook-blue:
+      loadBalancer:
+        passHostHeader: true
+        healthCheck:
+          path: /readyz
+          interval: 10s
+          timeout: 3s
+        servers:
+          - url: "http://service-webhook-blue:__APP_PORT__"
+    service-webhook-green:
+      loadBalancer:
+        passHostHeader: true
+        healthCheck:
+          path: /readyz
+          interval: 10s
+          timeout: 3s
+        servers:
+          - url: "http://service-webhook-green:__APP_PORT__"

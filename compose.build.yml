@@ -1,0 +1,12 @@
+services:
+  service-webhook-blue:
+    build:
+      context: ${SERVICE_WEBHOOK_PATH:-../verixa-code/service-webhook}
+      dockerfile: Dockerfile
+    image: service-webhook-local:${SERVICE_WEBHOOK_VERSION:-latest}
+
+  service-webhook-green:
+    build:
+      context: ${SERVICE_WEBHOOK_PATH:-../verixa-code/service-webhook}
+      dockerfile: Dockerfile
+    image: service-webhook-local:${SERVICE_WEBHOOK_VERSION:-latest}
