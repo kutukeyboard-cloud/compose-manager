@@ -3,22 +3,22 @@ services:
     build:
       context: ${SERVICE_WEBHOOK_PATH:-../verixa-code/service-webhook}
       dockerfile: Dockerfile
-    image: service-webhook-local:${SERVICE_WEBHOOK_VERSION:-latest}
+    image: ${SERVICE_WEBHOOK_IMAGE:-service-webhook}:${SERVICE_WEBHOOK_VERSION:-latest}
 
   api-verixa-green:
     build:
       context: ${SERVICE_WEBHOOK_PATH:-../verixa-code/service-webhook}
       dockerfile: Dockerfile
-    image: service-webhook-local:${SERVICE_WEBHOOK_VERSION:-latest}
+    image: ${SERVICE_WEBHOOK_IMAGE:-service-webhook}:${SERVICE_WEBHOOK_VERSION:-latest}
 
   api-lgpay-blue:
     build:
       context: ${SERVICE_WEBHOOK_PATH:-../verixa-code/service-webhook}
       dockerfile: Dockerfile
-    image: service-webhook-local:${SERVICE_WEBHOOK_VERSION:-latest}
+    image: ${SERVICE_WEBHOOK_IMAGE:-service-webhook}:${SERVICE_WEBHOOK_VERSION:-latest}
 
   api-lgpay-green:
     build:
       context: ${SERVICE_WEBHOOK_PATH:-../verixa-code/service-webhook}
       dockerfile: Dockerfile
-    image: service-webhook-local:${SERVICE_WEBHOOK_VERSION:-latest}
+    image: ${SERVICE_WEBHOOK_IMAGE:-service-webhook}:${SERVICE_WEBHOOK_VERSION:-latest}

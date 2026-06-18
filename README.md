@@ -165,5 +165,5 @@ docker compose --env-file .env.example -f docker-compose.yml -f compose.registry
 | `VERIXA_APP_ENV_FILE`               | `/dev/null`                      | External service-webhook env file for Verixa   |
 | `LGPAY_APP_ENV_FILE`                | `/dev/null`                      | External service-webhook env file for Lgpay    |
 | `SERVICE_WEBHOOK_PATH`              | `../verixa-code/service-webhook` | Source path for build mode                     |
-| `SERVICE_WEBHOOK_IMAGE`             | —                                | Registry image for registry mode               |
+| `SERVICE_WEBHOOK_IMAGE`             | `service-webhook`                | Image name for build or registry mode          |
 | `SERVICE_WEBHOOK_VERSION`           | `latest`                         | Image tag/version                              |
