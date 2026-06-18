@@ -12,6 +12,12 @@ http:
         - lgpay
       service: api-lgpay-weighted
 
+    api-sandbox:
+      rule: "PathPrefix(`/`)"
+      entryPoints:
+        - sandbox
+      service: api-sandbox-weighted
+
   services:
     # ── Verixa weighted (active color) ──────────────────────────────────────
     api-verixa-weighted:
@@ -66,3 +72,30 @@ http:
           timeout: 3s
         servers:
           - url: "http://api-lgpay-green:__LGPAY_PORT__"
+
+    # ── Sandbox weighted (active color) ─────────────────────────────────────
+    api-sandbox-weighted:
+      weighted:
+        services:
+          - name: api-sandbox-__ACTIVE_COLOR__
+            weight: 100
+
+    api-sandbox-blue:
+      loadBalancer:
+        passHostHeader: true
+        healthCheck:
+          path: /readyz
+          interval: 10s
+          timeout: 3s
+        servers:
+          - url: "http://api-sandbox-blue:__SANDBOX_PORT__"
+
+    api-sandbox-green:
+      loadBalancer:
+        passHostHeader: true
+        healthCheck:
+          path: /readyz
+          interval: 10s
+          timeout: 3s
+        servers:
+          - url: "http://api-sandbox-green:__SANDBOX_PORT__"

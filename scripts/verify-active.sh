@@ -7,9 +7,13 @@ source "$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)/lib.sh"
 
 verixa_url=${VERIXA_VERIFY_URL:-"http://127.0.0.1:${VERIXA_TRAEFIK_PORT:-8900}/readyz"}
 lgpay_url=${LGPAY_VERIFY_URL:-"http://127.0.0.1:${LGPAY_TRAEFIK_PORT:-8902}/readyz"}
+sandbox_url=${SANDBOX_VERIFY_URL:-"http://127.0.0.1:${SANDBOX_TRAEFIK_PORT:-8904}/readyz"}
 
 curl -fsS "$verixa_url" >/dev/null
 echo "Traefik readiness check passed for Verixa at $verixa_url"
 
 curl -fsS "$lgpay_url" >/dev/null
 echo "Traefik readiness check passed for Lgpay at $lgpay_url"
+
+curl -fsS "$sandbox_url" >/dev/null
+echo "Traefik readiness check passed for Sandbox at $sandbox_url"

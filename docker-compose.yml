@@ -54,6 +54,25 @@ x-api-lgpay-common: &api-lgpay-common
     promtail.labels.service_type: go
     promtail.labels.service_name: webhook
 
+x-api-sandbox-common: &api-sandbox-common
+  <<: *api-common
+  env_file:
+    - ${SANDBOX_APP_ENV_FILE:-/dev/null}
+  expose:
+    - "${SANDBOX_PORT:-8904}"
+  healthcheck:
+    test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:${SANDBOX_PORT:-8904}/readyz >/dev/null 2>&1"]
+    interval: 10s
+    timeout: 3s
+    retries: 6
+    start_period: 20s
+  environment: &api-sandbox-env
+    APP_PORT: ${SANDBOX_PORT:-8904}
+    SCHEDULER_ENABLED: "false"
+  labels:
+    promtail.labels.service_type: go
+    promtail.labels.service_name: webhook
+
 # ── Services ────────────────────────────────────────────────────────────────
 
 services:
@@ -66,6 +85,7 @@ services:
     ports:
       - "${VERIXA_TRAEFIK_PORT:-8900}:8900"
       - "${LGPAY_TRAEFIK_PORT:-8902}:8902"
+      - "${SANDBOX_TRAEFIK_PORT:-8904}:8904"
       - "${TRAEFIK_DASHBOARD_PORT:-8999}:8080"
     volumes:
       - ./traefik/traefik.yml:/etc/traefik/traefik.yml:ro
@@ -78,6 +98,8 @@ services:
       - api-verixa-green
       - api-lgpay-blue
       - api-lgpay-green
+      - api-sandbox-blue
+      - api-sandbox-green
 
   # ── Verixa blue/green ─────────────────────────────────────────────────────
 
@@ -113,6 +135,24 @@ services:
     image: ${SERVICE_WEBHOOK_IMAGE:-service-webhook}:${SERVICE_WEBHOOK_VERSION:-latest}
     environment:
       <<: *api-lgpay-env
+      DEPLOY_COLOR: green
+
+  # ── Sandbox blue/green ────────────────────────────────────────────────────
+
+  api-sandbox-blue:
+    <<: *api-sandbox-common
+    container_name: ${COMPOSE_PROJECT_NAME:-service-webhook-bg}-api-sandbox-blue
+    image: ${SERVICE_WEBHOOK_IMAGE:-service-webhook}:${SERVICE_WEBHOOK_VERSION:-latest}
+    environment:
+      <<: *api-sandbox-env
+      DEPLOY_COLOR: blue
+
+  api-sandbox-green:
+    <<: *api-sandbox-common
+    container_name: ${COMPOSE_PROJECT_NAME:-service-webhook-bg}-api-sandbox-green
+    image: ${SERVICE_WEBHOOK_IMAGE:-service-webhook}:${SERVICE_WEBHOOK_VERSION:-latest}
+    environment:
+      <<: *api-sandbox-env
       DEPLOY_COLOR: green
 
 # ── Networks ────────────────────────────────────────────────────────────────

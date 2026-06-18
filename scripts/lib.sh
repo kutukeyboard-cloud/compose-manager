@@ -15,11 +15,12 @@ fi
 
 # ── Brand registry ──────────────────────────────────────────────────────────
 # All managed brands. Phase 1 = atomic color switch (all brands switch together).
-BRANDS=(verixa lgpay)
+BRANDS=(verixa lgpay sandbox)
 
 # Per-brand port mapping
 VERIXA_PORT=${VERIXA_PORT:-8900}
 LGPAY_PORT=${LGPAY_PORT:-8902}
+SANDBOX_PORT=${SANDBOX_PORT:-8904}
 
 COMPOSE_MODE=${COMPOSE_MODE:-registry}
 
@@ -57,6 +58,7 @@ brand_port() {
   case "$brand" in
     verixa) echo "$VERIXA_PORT" ;;
     lgpay)  echo "$LGPAY_PORT" ;;
+    sandbox) echo "$SANDBOX_PORT" ;;
     *)      echo "Unknown brand: $brand" >&2; exit 2 ;;
   esac
 }
@@ -84,6 +86,7 @@ render_active_config() {
     -e "s/__ACTIVE_COLOR__/$color/g" \
     -e "s/__VERIXA_PORT__/$VERIXA_PORT/g" \
     -e "s/__LGPAY_PORT__/$LGPAY_PORT/g" \
+    -e "s/__SANDBOX_PORT__/$SANDBOX_PORT/g" \
     "$DYNAMIC_TEMPLATE" > "$tmp"
   mv "$tmp" "$DYNAMIC_ACTIVE"
 }

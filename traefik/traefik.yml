@@ -7,6 +7,8 @@ entryPoints:
     address: ":8900"
   lgpay:
     address: ":8902"
+  sandbox:
+    address: ":8904"
 
 providers:
   file:
