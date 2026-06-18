@@ -161,5 +161,5 @@ networks:
   traefik_internal:
     internal: true
   shared:
-    name: ${SHARED_NETWORK_NAME:-shared}
+    name: ${SHARED_NETWORK_NAME:-shared_net}
     external: true
